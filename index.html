@@ -1,0 +1,73 @@
+<!DOCTYPE HTML>
+<html lang="en-US">
+<head>
+    <meta charset="UTF-8">
+    <title>Bounding Box</title>
+    <link rel="stylesheet" href="lib/leaflet/leaflet.css">
+    <!--[if lte IE 9]>
+        <link rel="stylesheet" href="lib/leaflet/leaflet.ie.css">
+    <![endif]-->  
+    <link rel="stylesheet" href="lib/leaflet.draw/leaflet.draw.css">
+    <link rel="stylesheet" href="css/style.css">  
+</head>
+<body>
+    <div id="map" class="map"></div>
+    <div id="bbox"></div>
+    <div id="bbox-geojson"></div>
+    <div id="bbox-webm"></div>
+    <div id="bbox-webm-geojson"></div>
+    <script type="text/javascript" src="lib/jquery/jquery-1.8.2.min.js"></script>
+    <script type="text/javascript" src="lib/leaflet/leaflet.js"></script>
+    <script type="text/javascript" src="lib/leaflet.draw/leaflet.draw.js"></script>
+    <script type="text/javascript">
+        var map = L.map('map').setView([40, -90], 4)
+        L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'
+        }).addTo(map);
+
+        var drawControl = new L.Control.Draw({
+            position: 'topleft',
+            polygon: false,
+            polyline: false,
+            circle: false,
+            marker: false
+        });
+        map.addControl(drawControl);
+
+        var drawnItems = new L.LayerGroup();
+        map.on('draw:rectangle-created', function (e) {
+            var bounds = e.rect.getBounds(),
+                sw = bounds.getSouthWest(),
+                swWebM = map.options.crs.project(sw),
+                ne = bounds.getNorthEast(),
+                neWebM = map.options.crs.project(ne);
+
+            drawnItems.clearLayers();
+            drawnItems.addLayer(e.rect);
+            $('#bbox').text(bounds.toBBoxString());
+            $('#bbox-geojson').text(JSON.stringify({
+                type: 'Polygon',
+                coordinates: [[
+                    [sw.lng, sw.lat],
+                    [sw.lng, ne.lat],
+                    [ne.lng, ne.lat],
+                    [ne.lng, sw.lat],
+                    [sw.lng, sw.lat]
+                ]]
+            }));
+            $('#bbox-webm').text([swWebM.x, swWebM.y, neWebM.x, neWebM.y].join(','));
+            $('#bbox-webm-geojson').text(JSON.stringify({
+                type: 'Polygon',
+                coordinates: [[
+                    [swWebM.x, swWebM.y],
+                    [swWebM.x, neWebM.y],
+                    [neWebM.x, neWebM.y],
+                    [neWebM.x, swWebM.y],
+                    [swWebM.x, swWebM.y]
+                ]]
+            }));
+        });
+        map.addLayer(drawnItems);
+    </script>
+</body>
+</html>

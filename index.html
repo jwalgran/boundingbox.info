@@ -8,7 +8,9 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <div id="help">Use the rectangle tool to draw a box on the map. A bounds array and a GeoJSON feature collection will be shown below the map in both WSG84 and Web Mercator.</div>
+    <div class="about">Built by <a href="http://walgran.com">Justin Walgran</a> using <a href="http://leafletjs.com/">Leaflet</a>. <a href="https://github.com/jwalgran/boundingbox.info">Fork it on Github</a></div>
+    <h1>boundingbox.info</h1>
+    <div class="description">Pan, zoom and use the rectangle tool to draw a box on the map. A bounds array and a GeoJSON feature collection will be shown below the map in both WSG84 and Web Mercator.</div>
     <div id="map" class="map"></div>
     <div id="output" style="display: none;">
         <div class="coords"><a href="http://spatialreference.org/ref/epsg/4326/">WSG84 - EPSG:4326</a>
@@ -29,7 +31,7 @@
     <script type="text/javascript" src="lib/leaflet.draw/leaflet.draw.js"></script>
     <script type="text/javascript">
 
-        var map = L.map('map').setView([40, -90], 4)
+        var map = L.map('map').setView([40, -90], 2)
         L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'
         }).addTo(map);

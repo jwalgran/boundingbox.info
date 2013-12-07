@@ -25,25 +25,28 @@
             attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'
         }).addTo(map);
 
+        var drawnItems = new L.FeatureGroup();
+
         var drawControl = new L.Control.Draw({
-            position: 'topleft',
-            polygon: false,
-            polyline: false,
-            circle: false,
-            marker: false
+            edit: false,
+            draw: { // Rectangle only
+                polygon: false,
+                polyline: false,
+                circle: false,
+                marker: false
+            }
         });
         map.addControl(drawControl);
 
-        var drawnItems = new L.LayerGroup();
-        map.on('draw:rectangle-created', function (e) {
-            var bounds = e.rect.getBounds(),
+        map.on('draw:created', function (e) {
+            var bounds = e.layer.getBounds(),
                 sw = bounds.getSouthWest(),
                 swWebM = map.options.crs.project(sw),
                 ne = bounds.getNorthEast(),
                 neWebM = map.options.crs.project(ne);
 
             drawnItems.clearLayers();
-            drawnItems.addLayer(e.rect);
+            drawnItems.addLayer(e.layer);
             $('#bbox').text(bounds.toBBoxString());
             $('#bbox-geojson').text(JSON.stringify({
                 type: 'Polygon',

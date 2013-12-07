@@ -2,24 +2,36 @@
 <html lang="en-US">
 <head>
     <meta charset="UTF-8">
-    <title>Bounding Box</title>
+    <title>boundingbox.info - A tool for map developers</title>
     <link rel="stylesheet" href="../lib/leaflet/leaflet.css">
     <!--[if lte IE 9]>
         <link rel="stylesheet" href="../lib/leaflet/leaflet.ie.css">
-    <![endif]-->  
+    <![endif]-->
     <link rel="stylesheet" href="../lib/leaflet.draw/leaflet.draw.css">
-    <link rel="stylesheet" href="css/style.css">  
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <div id="help">Use the rectangle tool to draw a box on the map. A bounds array and a GeoJSON feature collection will be shown below the map in both WSG84 and Web Mercator.</div>
     <div id="map" class="map"></div>
-    <div id="bbox"></div>
-    <div id="bbox-geojson"></div>
-    <div id="bbox-webm"></div>
-    <div id="bbox-webm-geojson"></div>
+    <div id="output" style="display: none;">
+        <div class="coords"><a href="http://spatialreference.org/ref/epsg/4326/">WSG84 - EPSG:4326</a>
+            <ul>
+                <li><label for="bbox">Bounding Box</label><div id="bbox"></div></li>
+                <li><label for="bbox-geojson">GeoJSON</label><div id="bbox-geojson"></div></li>
+            </ul>
+        </div>
+        <div class="coords"><a href="http://spatialreference.org/ref/sr-org/6864/">Web Mercator - EPSG:3857</a>
+            <ul>
+                <li><label for="bbox-webm">Bounding Box</label><div id="bbox-webm"></div></li>
+                <li><label for="bbox-webm-geojson">GeoJSON</label><div id="bbox-webm-geojson"></div></li>
+            </ul>
+        </div>
+    </div>
     <script type="text/javascript" src="../lib/jquery/jquery-1.8.2.min.js"></script>
     <script type="text/javascript" src="../lib/leaflet/leaflet.js"></script>
     <script type="text/javascript" src="../lib/leaflet.draw/leaflet.draw.js"></script>
     <script type="text/javascript">
+
         var map = L.map('map').setView([40, -90], 4)
         L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'
@@ -38,6 +50,50 @@
         });
         map.addControl(drawControl);
 
+        function cornerCoordinatesToGeoJSON (sw, ne, epsg) {
+            return {
+                type: 'Polygon',
+                crs: 'EPSG:' + (epsg || 4326),
+                coordinates: [[
+                    [sw.lng || sw.x, sw.lat || sw.y],
+                    [sw.lng || sw.x, ne.lat || sw.y],
+                    [ne.lng || sw.x, ne.lat || sw.y],
+                    [ne.lng || sw.x, sw.lat || sw.y],
+                    [sw.lng || sw.x, sw.lat || sw.y]
+                ]]
+            }
+        }
+
+        function wrapGeomAsFeatureCollection (geom, properties) {
+            return {
+                "type": "FeatureCollection",
+                "features": [{
+                    "type": "Feature",
+                    "properties": properties || {},
+                    "geometry": geom
+                }]
+            }
+        }
+
+        function cornersToFeatureCollection (sw, ne, epsg) {
+            return wrapGeomAsFeatureCollection(cornerCoordinatesToGeoJSON(sw, ne, epsg))
+        }
+
+        function showOutput () {
+            $('#output').show();
+        }
+
+        function hideOutput () {
+            $('#output').hide();
+        }
+
+        function removePreviousRegion () {
+            drawnItems.clearLayers();
+        }
+
+        map.on('draw:drawstart', hideOutput);
+        map.on('draw:drawstart', removePreviousRegion);
+
         map.on('draw:created', function (e) {
             var bounds = e.layer.getBounds(),
                 sw = bounds.getSouthWest(),
@@ -45,31 +101,18 @@
                 ne = bounds.getNorthEast(),
                 neWebM = map.options.crs.project(ne);
 
-            drawnItems.clearLayers();
             drawnItems.addLayer(e.layer);
             $('#bbox').text(bounds.toBBoxString());
-            $('#bbox-geojson').text(JSON.stringify({
-                type: 'Polygon',
-                coordinates: [[
-                    [sw.lng, sw.lat],
-                    [sw.lng, ne.lat],
-                    [ne.lng, ne.lat],
-                    [ne.lng, sw.lat],
-                    [sw.lng, sw.lat]
-                ]]
-            }));
+            $('#bbox-geojson').text(JSON.stringify(
+                cornersToFeatureCollection(sw,ne)
+            ));
             $('#bbox-webm').text([swWebM.x, swWebM.y, neWebM.x, neWebM.y].join(','));
-            $('#bbox-webm-geojson').text(JSON.stringify({
-                type: 'Polygon',
-                coordinates: [[
-                    [swWebM.x, swWebM.y],
-                    [swWebM.x, neWebM.y],
-                    [neWebM.x, neWebM.y],
-                    [neWebM.x, swWebM.y],
-                    [swWebM.x, swWebM.y]
-                ]]
-            }));
+            $('#bbox-webm-geojson').text(JSON.stringify(
+                cornersToFeatureCollection(swWebM, neWebM, 3857)
+            ));
         });
+        map.on('draw:created', showOutput);
+
         map.addLayer(drawnItems);
     </script>
 </body>

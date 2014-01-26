@@ -14,7 +14,6 @@
     <div class="about">Built by <a href="http://walgran.com">Justin Walgran</a> using <a href="http://leafletjs.com/">Leaflet</a>. <a href="https://github.com/jwalgran/boundingbox.info">Fork it on Github</a></div>
     <h1>boundingbox.info</h1>
     <div class="description">Pan, zoom and use the rectangle tool to draw a box on the map. A bounds array and a GeoJSON feature collection will be shown below the map in both WSG84 and Web Mercator.</div>
-    <div id="map" class="map"></div>
     <div id="output" style="display: none;">
         <div class="coords"><a href="http://spatialreference.org/ref/epsg/4326/">WSG84 - EPSG:4326</a>
             <ul>
@@ -29,6 +28,8 @@
             </ul>
         </div>
     </div>
+
+    <div id="map" class="map"></div>
     <script type="text/javascript" src="../lib/jquery/jquery-1.8.2.min.js"></script>
     <script type="text/javascript" src="../lib/leaflet/leaflet.js"></script>
     <script type="text/javascript" src="../lib/leaflet.draw/leaflet.draw.js"></script>
@@ -38,6 +39,25 @@
         L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'
         }).addTo(map);
+
+        var resizeMap = function(initial){
+            var bottomPadding = 50;
+            var mapDiv = $('#map');
+            var prevHeight = mapDiv.height();
+            var wrapDiv = $('#wrap');
+            var height = $(window).height() - mapDiv.offset().top - bottomPadding - wrapDiv.height();
+            if(initial) {
+                mapDiv.css({'height': height +'px'});
+                map.invalidateSize();
+            } else {
+                mapDiv.animate({
+                    height: height + 'px'
+                }, 100, function() {
+                    map.invalidateSize();
+                });
+            }
+        };
+
 
         var drawnItems = new L.FeatureGroup();
 
@@ -82,11 +102,18 @@
         }
 
         function showOutput () {
-            $('#output').show();
+            $output = $('#output');
+            if(!$output.is(":visible")) {
+                $output.slideToggle(500,function() { resizeMap(false); });
+            }
+                
         }
 
         function hideOutput () {
-            $('#output').hide();
+            $output = $('#output');
+            if($output.is(":visible")) {
+                $output.slideToggle(500,function() { resizeMap(false); });
+            }
         }
 
         function removePreviousRegion () {
@@ -116,6 +143,11 @@
         map.on('draw:created', showOutput);
 
         map.addLayer(drawnItems);
+
+        $(document).ready(function() {
+            resizeMap(true);
+            $(window).resize(function() { resizeMap(false); });
+        });
     </script>
 </body>
 </html>
